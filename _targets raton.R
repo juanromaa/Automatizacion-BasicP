@@ -4,19 +4,19 @@ library(targets)
 #Establecer directorio principal
 setwd("C:/Users/Juan/Desktop/NOVO/mouse")
 
-#Par·metros generales
+#Par√°metros generales
 runMulticore = 3
 toTIFF = FALSE
 
 specie_used = "Mus_musculus" #especie para anotacion de genes con repositorios KEGG y ENSEMBLE
 # actualmente para KEGG solo estan disponibles los siguientes:
-#Homo_sapiens, Mus_musculus, Rattus_norvegicus, Bos_taurus, Danio_rerioÔ, Sus_scrofa
+#Homo_sapiens, Mus_musculus, Rattus_norvegicus, Bos_taurus, Danio_rerio√Ø, Sus_scrofa
 
 orgPackage_used = "org.Mm.eg" #orgPackage que se utilizara
 annotation_data_affymetrix = "mouse4302.db" #libreria del organismo correspondiente
 #da problemas entre ponerle o no .db al final
 
-#LibrerÌas necesarias
+#Librer√≠as necesarias
 libraries = c(
   "BiocManager",
   "parallel",
@@ -37,26 +37,27 @@ libraries = c(
   "pd.clariom.s.mouse.ht", #importante para el raton
   "org.Mm.eg.db" #importanto para el raton
   )
+
+##Intento de automatizar la comprobaci√≥n e insalaci√≥n de los paquetes necesarios
 #BiocManager::install("org.Mm.eg.db")
 #BiocManager::install("mouse4302.db")
 #BiocManager::install("pd.clariom.s.mouse.ht") para normalization
 #maybe? no ha dado warning ni nada pero no se 100%
 
-#InstalaciÛn de librerÌas necesarias
 #for (i in normal_libraries){
 #  p_load(i)
 #}
 #p_load(normal_libraries, install = TRUE)
 
-#for (i in bioconductor_libraries){
+#for (i in libraries){
 #  if(!require(i)){
 #    BiocManager::install(i)}
 #}
 
 #Carga de todos los scripts en la carpeta R
-sapply(paste("R/", list.files(paste("C:/Users/Juan/Desktop/NOVO/mouse/R", sep="")), sep=""), source)
+sapply(paste("R/", list.files(paste("C:/Users/direcci√≥n carpeta R", sep="")), sep=""), source)
 
-#librerÌas a utilizar
+#librer√≠as a utilizar
 tar_option_set(
   packages = libraries
   )
@@ -159,8 +160,8 @@ list(
                   entrezs = entrez,
                   bySignal = TRUE,
                   signalThr = 50,
-                  grups = pData(normalized)$Group, #notas
-                  sigFun.Name = "filt.by.Signal", #notas
+                  grups = pData(normalized)$Group, 
+                  sigFun.Name = "filt.by.Signal", 
                   sigThr.as.perc = TRUE,
                   byVar = TRUE,
                   variabilityThr = 50,
@@ -236,6 +237,7 @@ list(
   
   tar_target(gr, unique(targets.designmatrix$Group), priority = 0.775),
   
+  #Esto facilitar√≠a la etapa lmAnalysis pero solo para tres grupos distintos, si son m√°s o menos dar√≠a problemas
   tar_target(myargs, list(paste(gr[1],"-",gr[2], sep=""), 
                           paste(gr[1],"-",gr[3], sep=""),
                           paste(gr[2],"-",gr[3], sep=""),
@@ -244,20 +246,16 @@ list(
                             columnas = unique(targets.designmatrix$Group),
                             filas = targets.designmatrix$ShortName)), priority = 0.774),
   
-
-  
-
-
   #lmAnalysis
   tar_target(lmAnalysis.pars, 
-             list(exprs.filtered = expres.filtered, #notas
+             list(exprs.filtered = expres.filtered, 
                   
-                  design = myargs$levels, #con $ lo lee como matriz mientras que con [4] lo lee como lista y da errro
+                  design = myargs$levels, #con $ lo lee como matriz mientras que con [4] lo lee como lista y da error
                   
                   cont.matrix = do.call(makeContrasts, myargs),
                   
                   contrasts2test = 1:ncol(makeContrasts(
-                    paste(tar_read(gr)[1],"-",tar_read(gr)[2], sep=""), #aÒadido el tar_read
+                    paste(tar_read(gr)[1],"-",tar_read(gr)[2], sep=""), #a√±adido el tar_read
                     paste(tar_read(gr)[1],"-",tar_read(gr)[3], sep=""), 
                     paste(tar_read(gr)[2],"-",tar_read(gr)[3], sep=""), 
                     levels=unique(targets.designmatrix$Group))),
@@ -310,7 +308,7 @@ list(
                                  anotFilename = "Annotations")),
              priority = 0.75),
 
-  tar_target(doLmAnalysis.func, #en script lmAnalysis.R est· tambiÈn la funcion dolmanalysis, en esta se usa eval(parse(p$symbolids)) que da error, quito el eval(parse y funciona)
+  tar_target(doLmAnalysis.func, #en script lmAnalysis.R est√° tambi√©n la funcion dolmanalysis, en esta se usa eval(parse(p$symbolids)) que da error, quito el eval(parse) y funciona
              for(ix in 1:length(doLmAnalysis.pars)){
                fit.Main <- doLmAnalysis(doLmAnalysis.pars[ix])
                },
@@ -338,15 +336,15 @@ list(
              do.call(GeneAnnotation,GeneAnnotation.pars),
              priority = 0.71),
 
-  #doGeneAnnotation #notas
+  #doGeneAnnotation
   tar_target(doGeneAnnotation.pars, list(list(fitMain = NULL,
                                          fitFileName = "fit.Rda",
-                                         my.IDs = entrez, #notas
+                                         my.IDs = entrez,
                                          anotPackage = orgPackage_used,
                                          toHTML = TRUE,
                                          outputDir = outputDir,
                                          anotFilename = "Annotations",
-                                         titleAnotations = "Annotations for filtered genes", #notas
+                                         titleAnotations = "Annotations for filtered genes", 
                                          specie = "homo sapiens",
                                          info2show = c("Affymetrix", "EntrezGene", 
                                                        "GeneSymbol", "GeneName", 
@@ -380,7 +378,7 @@ list(
                                     "and |logFC| >", 
                                     multipleComp.var$minLogFoldChange, sep = " "),
                   outputDir = outputDir,
-                  anotPackage = orgPackage_used,
+                  anotPackage = orgPackage_used, #variables establecida la principio
                   my.symbols = symbols,
                   linksFile = linkfile,
                   multCompMethod = "separate",
@@ -414,19 +412,19 @@ list(
                                           minLogFoldChange = c(1, 1)),
              priority = 0.65),
 
-  #doMultCompAnalysis #notas
+  #doMultCompAnalysis 
   tar_target(doMultCompAnalysis.pars, 
              do.call(sets_doMultCompAnalysis, doMultCompAnalysis.var),
              priority = 0.64),
   
-  tar_target(doMultCompAnalysis.func, #notas
+  tar_target(doMultCompAnalysis.func, 
              for (ix in 1:length(doMultCompAnalysis.pars))
                {
                geneList.MCi = doMultCompAnalysis(doMultCompAnalysis.pars[ix])
                }, 
              priority = 0.63),
   
-  ####s2clust#### #notas
+  ####s2clust####
   tar_target(s2clust, 
              which(as.logical(apply(lmAnalysis.pars$design[
                ,
@@ -456,7 +454,10 @@ list(
                                          mid = "white", 
                                          high = "magenta"),
                   densityInfo = "denisty",
-                  colsForGroups = c("pink","pink","pink","pink",#s2clust es un int de 8 valores, por lo que la longitud del vector colsforgroups debe coincidir con el de s2clust,
+                  #s2clust es un int de 8 valores, por lo que la longitud del vector colsforgroups debe coincidir con el de s2clust, 
+                  #en vez de indicarlos directamente con
+                  #strings, deber√≠a crear una funci√≥n que extraiga la longitud de s2clust y decida los colores en base a ese n√∫mero.
+                  colsForGroups = c("pink","pink","pink","pink",
                                     "blue","blue","blue","blue"),
                   cexForColumns = 0.8,
                   cexForRows = 0.8,
@@ -493,7 +494,7 @@ list(
 
   #GoAnalysis  
   tar_target(GoAnalysis.pars, list(fitMain = fitmain,
-                                   whichContrasts = (1:ncol(lmAnalysis.pars$cont.matrix)),#notas 
+                                   whichContrasts = (1:ncol(lmAnalysis.pars$cont.matrix)),
                                    comparison.Name = "Estudi",
                                    outputDir = outputDir,
                                    anotPackage = orgPackage_used,
@@ -554,7 +555,7 @@ list(
                                      my.IDs = entrez,
                                      addGeneNames = TRUE,
                                      fileOfLinks = linkfile,
-                                     cutoffMethod = c("unadjusted"), #notas
+                                     cutoffMethod = c("unadjusted"), 
                                      P.Value.cutoff = rep(0.05, length(1:3)),
                                      pval = 0.05,
                                      thrLogFC = NULL,
@@ -565,7 +566,7 @@ list(
              priority = 0.51),
 
 
-  #doKEGGAnalysis #notas
+  #doKEGGAnalysis 
   tar_target(doKEGGAnalysis.pars, 
              add2parsList(KEGGParsList <- list(),
                           KEGGPar <- list(fitFileName = "fit.Rda",
